@@ -1,11 +1,24 @@
 [
   {
-    "grade": "3학년",
+    "email": "test@naver.com",
+    "grade": "1학년",
     "category": "백엔드",
     "technologies": [
       "Java"
     ],
     "favoriteSite": [
+      "Youtube"
+    ]
+  },
+  {
+    "email": "test2@naver.com",
+    "grade": "2학년",
+    "category": "프론트엔드",
+    "technologies": [
+      "vue.js"
+    ],
+    "favoriteSite": [
+      "Inflearn",
       "Youtube"
     ]
   }

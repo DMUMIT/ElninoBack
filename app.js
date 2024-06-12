@@ -5,13 +5,17 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const passport = require('passport');
 const cors = require('cors');
+const path = require('path');
+const { sequelize } = require('./models'); 
 
 const userRoutes = require('./routes/users');
-const surveyRoutes = require('./survey');
-const { sequelize } = require('./models'); // Sequelize 인스턴스 가져오기
+const surveyRoutes = require('./routes/survey');
+const mainRoutes = require('./routes/main');
 
 const app = express();
 const port = process.env.PORT || 8080;
+
+
 
 app.use(cors({
   origin: 'http://localhost:3000',
@@ -31,8 +35,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/survey', surveyRoutes);
 app.use('/users', userRoutes);
+app.use('/survey', surveyRoutes);
+app.use('/main', mainRoutes);
 
 app.get('/', (req, res) => {
     res.send('Welcome to the home page!');
@@ -48,3 +53,6 @@ sequelize.sync()
     .catch(err => {
         console.error('Unable to connect to the database:', err);
     });
+
+    
+module.exports = app;
