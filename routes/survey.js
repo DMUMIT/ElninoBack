@@ -1,20 +1,10 @@
-const axios = require("axios");
-const cheerio = require("cheerio");
-const mysql = require('mysql2/promise');
-const fs = require('fs');
-const path = require('path');
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
+const { scrapeCoursesForUser } = require('../main/inflearn');
 require('dotenv').config();
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
-};
-
-const pool = mysql.createPool(dbConfig);
 const surveyDataPath = path.join(__dirname, '..', 'data', 'surveyData.json'); // 데이터 파일 경로 설정
 
 // 설문조사 데이터 확인
@@ -36,28 +26,6 @@ router.get('/checkSurvey', async (req, res) => {
 });
 
 // 설문조사 데이터 제출
-// router.post('/submit', async (req, res) => {
-//   const surveyData = req.body;
-//   try {
-//     let data = fs.readFileSync(surveyDataPath, 'utf8');
-//     let surveys = JSON.parse(data);
-
-//     const existingSurveyIndex = surveys.findIndex(survey => survey.email === surveyData.email);
-//     if (existingSurveyIndex !== -1) {
-//       surveys[existingSurveyIndex] = surveyData;
-//     } else {
-//       surveys.push(surveyData);
-//     }
-
-//     fs.writeFileSync(surveyDataPath, JSON.stringify(surveys, null, 2));
-//     console.log('Survey data saved:', surveyData);
-
-//     res.json({ success: true, message: 'Survey submitted successfully' });
-//   } catch (err) {
-//     console.error('Failed to save survey data:', err);
-//     res.status(500).send('Internal server error');
-//   }
-// });
 router.post('/submit', async (req, res) => {
   const surveyData = req.body;
   try {
@@ -74,7 +42,7 @@ router.post('/submit', async (req, res) => {
     fs.writeFileSync(surveyDataPath, JSON.stringify(surveys, null, 2));
     console.log('Survey data saved:', surveyData);
 
-    await scrapeCoursesFromSurvey(); // 설문조사 제출 후 스크래핑 실행
+    await scrapeCoursesForUser(surveyData.email);
 
     res.json({ success: true, message: 'Survey submitted successfully' });
   } catch (err) {
@@ -82,5 +50,18 @@ router.post('/submit', async (req, res) => {
     res.status(500).send('Internal server error');
   }
 });
+
+// 현재 로그인한 사용자의 이메일에 해당하는 코스를 가져오는 엔드포인트
+router.get('/courses', async (req, res) => {
+  try {
+    const email = req.query.email;
+    const courses = await Course.findAll({ where: { email } });
+    res.json(courses);
+  } catch (error) {
+    console.error('Error fetching courses:', error);
+    res.status(500).send('Server Error');
+  }
+});
+
 
 module.exports = router;

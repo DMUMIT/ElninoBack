@@ -36,23 +36,21 @@ const parseCourses = async (keyword) => {
     const $ = cheerio.load(data);
     const courses = [];
 
-    $("article.card").each((_, element) => {
-      const title = $(element).find("p.mantine-Text-root.css-10bh5qj.mantine-169r75g").text().trim();
-      const instructor = $(element).find("p.mantine-Text-root.css-1r49xhh.mantine-17j39m6").text().trim();
-      const price = $(element).find("p.mantine-Text-root.css-uzjboo.mantine-nu4660").text().trim();
+    $("li.css-8atqhb.mantine-1avyp1d").each((_, element) => {
+      const title = $(element).find("p.mantine-Text-root.css-10bh5qj.mantine-169r75g").text().trim();  
+      const instructor = $(element).find("p.mantine-Text-root.css-1r49xhh.mantine-17j39m6").text().trim();  
+      const price = $(element).find("div.mantine-Group-root.mantine-1n7ftt8 > p.mantine-Text-root.css-uzjboo.mantine-nu4660").text().trim();
       const imgSrc = $(element).find("div.mantine-AspectRatio-root.css-2oqlco img").attr('src');
+      const courseUrl = $(element).find("a").attr('href');
 
-      console.log(`Parsed course: ${title}, ${instructor}, ${price}, ${imgSrc}`); 
 
-    //   courses.push({ title, instructor, price, imgSrc });
-    // });
-    if (title && instructor && price && imgSrc) {
-      console.log(`Parsed course: ${title}, ${instructor}, ${price}, ${imgSrc}`);
-      courses.push({ title, instructor, price, imgSrc });
-    } else {
-      console.error(`Incomplete course data: ${title}, ${instructor}, ${price}, ${imgSrc}`);
-    }
-  });
+      if (title && instructor && price && imgSrc && courseUrl) {
+        console.log(`Parsed course: ${title}, ${instructor}, ${price}, ${imgSrc}, ${courseUrl}`);
+        courses.push({ title, instructor, price, imgSrc, courseUrl });
+      } else {
+        console.error(`Incomplete course data: ${title}, ${instructor}, ${price}, ${imgSrc}, ${courseUrl}`);
+      }
+    });
 
     return courses;
   } catch (error) {
@@ -60,43 +58,25 @@ const parseCourses = async (keyword) => {
   }
 };
 
-// const saveCoursesToDB = async (courses) => {
-//   const connection = await pool.getConnection();
-//   try {
-//     await connection.beginTransaction();
-//     for (const course of courses) {
-//       const { title, instructor, price, imgSrc } = course;
-//       await connection.execute(
-//         'INSERT INTO courses (title, instructor, price, imgSrc) VALUES (?, ?, ?, ?)',
-//         [title, instructor, price, imgSrc]
-//       );
-//     }
-//     await connection.commit();
-//   } catch (error) {
-//     await connection.rollback();
-//     console.error('Error saving courses to DB:', error);
-//   } finally {
-//     connection.release();
-//   }
-// };
 const saveCoursesToDB = async (email, courses) => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
     for (const course of courses) {
-      const { title, instructor, price, imgSrc } = course;
+      const { title, instructor, price, imgSrc, courseUrl } = course;
 
-      if (!title || !instructor || !price || !imgSrc) {
+      if (!title || !instructor || !price || !imgSrc || !courseUrl) {
         console.error(`Invalid course data: ${JSON.stringify(course)}`);
         continue;
       }
 
       await connection.execute(
-        'INSERT INTO courses (email, title, instructor, price, imgSrc) VALUES (?, ?, ?, ?, ?)',
-        [email, title, instructor, price, imgSrc]
+        'INSERT INTO courses (email, title, instructor, price, imgSrc, courseUrl) VALUES (?, ?, ?, ?, ?, ?)',
+        [email, title, instructor, price, imgSrc, courseUrl]
       );
     }
     await connection.commit();
+    console.log('Courses saved to DB successfully.');
   } catch (error) {
     await connection.rollback();
     console.error('Error saving courses to DB:', error);
@@ -105,46 +85,27 @@ const saveCoursesToDB = async (email, courses) => {
   }
 };
 
-// const scrapeCoursesFromSurvey = async () => {
-//   try {
-//     const data = fs.readFileSync(surveyDataPath, 'utf8');
-//     const surveys = JSON.parse(data);
-//     const allTechnologies = surveys.flatMap(survey => 
-//       survey.responses && survey.responses.technologies ? survey.responses.technologies : []
-//     );
 
-//     const uniqueTechnologies = [...new Set(allTechnologies)]; // 중복 제거
-
-//     for (const tech of uniqueTechnologies) {
-//       const courses = await parseCourses(tech);
-//       if (courses.length > 0) {
-//         await saveCoursesToDB(courses);
-//         console.log(`Courses scraped and saved for ${tech}: ${courses.length} courses.`);
-//       } else {
-//         console.log(`No courses found for ${tech}.`);
-//       }
-//     }
-//   } catch (error) {
-//     console.error('Error scraping courses from survey data:', error);
-//   }
-// };
-const scrapeCoursesFromSurvey = async () => {
+const scrapeCoursesForUser = async (email) => {
   try {
     const data = fs.readFileSync(surveyDataPath, 'utf8');
     const surveys = JSON.parse(data);
 
-    for (const survey of surveys) {
-      const email = survey.email;
-      const technologies = survey.technologies;
+    const userSurvey = surveys.find(survey => survey.email === email);
+    if (!userSurvey) {
+      console.log(`No survey data found for email: ${email}`);
+      return;
+    }
 
-      for (const tech of technologies) {
-        const courses = await parseCourses(tech);
-        if (courses.length > 0) {
-          await saveCoursesToDB(email, courses);
-          console.log(`Courses scraped and saved for ${tech}: ${courses.length} courses.`);
-        } else {
-          console.log(`No courses found for ${tech}.`);
-        }
+    const technologies = userSurvey.technologies;
+
+    for (const tech of technologies) {
+      const courses = await parseCourses(tech);
+      if (courses.length > 0) {
+        await saveCoursesToDB(email, courses);
+        console.log(`Courses scraped and saved for ${tech}: ${courses.length} courses.`);
+      } else {
+        console.log(`No courses found for ${tech}.`);
       }
     }
   } catch (error) {
@@ -152,9 +113,6 @@ const scrapeCoursesFromSurvey = async () => {
   }
 };
 
-// 설문조사 기술 기반 스크래핑 실행
-scrapeCoursesFromSurvey();
-
 module.exports = {
-  scrapeCoursesFromSurvey
+  scrapeCoursesForUser
 };

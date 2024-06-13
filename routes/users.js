@@ -73,4 +73,23 @@ router.post('/login', async (req, res) => {
     }
 });
 
+router.get('/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.redirect('/login');
+    });
+  });
+
+  router.get('/currentUser', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const user = await User.findByPk(userId);
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).send('Server Error');
+  }
+});
 module.exports = router;

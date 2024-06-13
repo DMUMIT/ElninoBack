@@ -7,7 +7,7 @@
       "Java"
     ],
     "favoriteSite": [
-      "Youtube"
+      "Inflearn"
     ]
   },
   {
@@ -15,11 +15,34 @@
     "grade": "2학년",
     "category": "프론트엔드",
     "technologies": [
-      "vue.js"
+      "html/css"
     ],
     "favoriteSite": [
-      "Inflearn",
-      "Youtube"
+      "Inflearn"
+    ]
+  },
+  {
+    "email": "test3@naver.com",
+    "grade": "3학년",
+    "category": "데이터베이스",
+    "technologies": [
+      "MySQL(MariaDB)"
+    ],
+    "favoriteSite": [
+      "Inflearn"
+    ]
+  },
+  {
+    "email": "kimwoo5531@naver.com",
+    "grade": "4학년",
+    "category": "풀스택",
+    "technologies": [
+      "Java",
+      "Spring",
+      "Node.js"
+    ],
+    "favoriteSite": [
+      "Inflearn"
     ]
   }
 ]
